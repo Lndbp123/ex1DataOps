@@ -5,41 +5,42 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build-test-run:
     runs-on: ubuntu-latest
-    
+    env:
+      CI_API_URL: ${{ secrets.CI_API_URL }}
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
-        
+
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
-          
+
       - name: Instalar dependências
         run: pip install -r requirements.txt
-        
+
       - name: Rodar testes
         run: pytest -v
-        
+
       - name: Executar pipeline
         run: python app/pipeline.py
-        
+
       - name: Upload do resumo como artefato
         uses: actions/upload-artifact@v4
         with:
           name: summary
           path: output/summary.csv
-          
+
       - name: Notificar API externa
-        if: ${{ secrets.CI_API_URL != '' }}
+        if: ${{ env.CI_API_URL != '' }}
         env:
-          CI_API_URL: ${{ secrets.CI_API_URL }}
           CI_API_TOKEN: ${{ secrets.CI_API_TOKEN }}
         run: |
           curl --fail --show-error --silent \
